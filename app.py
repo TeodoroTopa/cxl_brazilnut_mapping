@@ -19,173 +19,150 @@ from folium.plugins import MarkerCluster
 
 load_dotenv()
 
+# Base page info
+st.title("Recent Brazil Nut and Soy Production in the Amazon Basin")
+
 
 @st.cache_data
 def load_base_data():
-    bra_municipios = gpd.read_file("zip://BR_Municipios_2021.zip")
+    locations = {
+    'AFIMAD': (-13.180679543510646, -69.4089469802327),
+    'COOPAVAM': (-10.382857589742994, -58.419712312184615),
+    'RECA': (-9.75686765859735, -66.6075266735577),
+    'RONAP': (-12.591430033691857, -69.17701635817673),
+    'COOPERACRE': (-10.029457122219789, -67.7972471794766),
+    'COOPBAY': (-7.871209772219521, -51.8345907706893),
+    'FEPROCAMD': (-12.111794449723988, -76.98961676442958),
+    'ABNC': (-23.557338640005376, -46.661260686767605),
+    'GREENFOREST': (-10.996698548344776, -66.07256528093042)
+    }
 
-    simplified_bra_municipios = bra_municipios.copy()
-    simplified_bra_municipios['geometry'] = simplified_bra_municipios['geometry'].simplify(tolerance = 0.01)
-    simplified_bra_municipios['CD_MUN'] = simplified_bra_municipios['CD_MUN'].astype(str)
-
-    bra_castana = pd.read_csv("bra_castana_production_by_municipality.csv")
-    bra_castana['CD_MUN'] = bra_castana['CD_MUN'].astype(str)
-
-    bra_gdf_castana = simplified_bra_municipios.merge(bra_castana, how = 'left', left_on = 'CD_MUN', right_on = 'CD_MUN')
-
-    return bra_gdf_castana
+    base_data = gpd.read_file("final_map_data.geojson")
 
 
-def get_colormap(values: List[float]) -> cm.ColorMap:
-    min_value, max_value = min(values), max(values)
-    colormap = cm.linear.YlOrRd_09.scale(min_value, max_value)
-    return colormap
+    return base_data, locations
 
-# Base page info
-st.title("Brazil Nut and Soy Production in the Amazon Basin")
 
-# Load static data
-bra_gdf_castana = load_base_data()
+castana_colormap = cm.StepColormap(['#fff5f0', '#FDE6DD', '#fdccb8', '#fc8f6f', '#f44d37', '#c5161b', '#67000d'],
+                                   index = [0, 10, 200, 1000, 2000, 3000, 10000])
 
-# castana_colormap = get_colormap(bra_gdf_castana['2022'])
 
-def get_color(value):
-    if value == None:
-        return '#fff5f0'
-    if value >= 0 and value <= 1:
-        return '#fff5f0'
-    if value > 1 and value <= 200:
-        return '#fdccb8'
-    if value > 200 and value <= 1000:
-        return '#fc8f6f'
-    if value > 1000 and value <= 2000:
-        return '#f44d37'
-    if value > 2000 and value <= 3000:
-        return '#c5161b'
-    if value > 3000:
-        return '#67000d'
-    else:
-        return '#fff5f0'
+soy_colormap = cm.StepColormap(['#fff5f0', '#FDE6DD', '#fdccb8', '#fc8f6f', '#f44d37', '#c5161b', '#67000d', '#48010A'],
+                                   index = [0, 1000, 50000, 100000, 250000, 500000, 1000000, 10000000])
+
+def get_color(value, crop, castana_colormap = castana_colormap, soy_colormap = soy_colormap):
+    if crop == 'Brazil Nut':
+        color = castana_colormap(value)
+        opacity =  0.01 if value <= 10 else 0.75
+        return color, opacity
+    if crop == 'Soy':
+        color = soy_colormap(value)
+        opacity =  0.1 if value < 1000 else 0.75
+        return color, opacity
     
-m = folium.Map(location=[-3.4653, -62.2159], zoom_start=5, prefer_canvas = True)
+def get_data_layer(base_data, crop, year, show = False):
 
+    if crop == 'Brazil Nut':
+        name = f'{year} {crop} Production in Brazil'
+        crop_data = base_data[base_data['Municipality'].str[:6] == 'Brazil']
 
-brazil_castana_2018_layer = folium.GeoJson(
-    bra_gdf_castana,
-    name = '2018 Castana Production in Brazil',
-    show = False,
+    elif crop == 'Soy':
+        name = f'{year} {crop} Production in Bolivia and Brazil'
+        crop_data = base_data
+    
+    layer = folium.GeoJson(
+    crop_data,
+    name = name,
+    show = show,
     style_function = lambda feature: {
-        'fillColor': get_color(feature['properties']['2018']),
+        'fillColor': get_color(feature['properties'][f'{crop} Production {year}'], crop)[0],
         'color': 'black',
         'weight': 0.5,
-        'fillOpacity': 0.75
-    },
+        'fillOpacity': get_color(feature['properties'][f'{crop} Production {year}'], crop)[1]
+        },
     highlight_function=lambda feature: {
         'fillColor': 'yellow',   # Change color on hover
         'color': 'black',         # Keep border black on hover
         'weight': 1.5,            # Increase weight on hover
-        'fillOpacity': 0.7
-    },
+        'fillOpacity': get_color(feature['properties'][f'{crop} Production {year}'], crop)[1]
+        },
     tooltip=folium.GeoJsonTooltip(
-        fields=['NM_MUN', '2018'],  # Replace with the name of your column
-        aliases=['Municipality:', '2018 Brazil Nut Production'],             # Tooltip alias
+        fields=['Municipality', f'{crop} Production {year}'],  # Replace with the name of your column
+        aliases=['Municipality:', f'{year} {crop} Production (metric tons)'],             # Tooltip alias
         localize=True                   # Localize numbers
+        )
     )
-).add_to(m)
-
-brazil_castana_2019_layer = folium.GeoJson(
-    bra_gdf_castana,
-    show = False,
-    name = '2019 Castana Production in Brazil',
-    style_function = lambda feature: {
-        'fillColor': get_color(feature['properties']['2019']),
-        'color': 'black',
-        'weight': 0.5,
-        'fillOpacity': 0.75
-    },
-    highlight_function=lambda feature: {
-        'fillColor': 'yellow',   # Change color on hover
-        'color': 'black',         # Keep border black on hover
-        'weight': 1.5,            # Increase weight on hover
-        'fillOpacity': 0.7
-    },
-    tooltip=folium.GeoJsonTooltip(
-        fields=['NM_MUN', '2019'],  # Replace with the name of your column
-        aliases=['Municipality:', '2019 Brazil Nut Production'],             # Tooltip alias
-        localize=True                   # Localize numbers
-    )
-).add_to(m)
-
-brazil_castana_2020_layer = folium.GeoJson(
-    bra_gdf_castana,
-    show = False,
-    name = '2020 Castana Production in Brazil',
-    style_function = lambda feature: {
-        'fillColor': get_color(feature['properties']['2020']),
-        'color': 'black',
-        'weight': 0.5,
-        'fillOpacity': 0.75
-    },
-    highlight_function=lambda feature: {
-        'fillColor': 'yellow',   # Change color on hover
-        'color': 'black',         # Keep border black on hover
-        'weight': 1.5,            # Increase weight on hover
-        'fillOpacity': 0.7
-    },
-    tooltip=folium.GeoJsonTooltip(
-        fields=['NM_MUN', '2020'],  # Replace with the name of your column
-        aliases=['Municipality:', '2020 Brazil Nut Production'],             # Tooltip alias
-        localize=True                   # Localize numbers
-    )
-).add_to(m)
-
-brazil_castana_2021_layer = folium.GeoJson(
-    bra_gdf_castana,
-    show = False,
-    name = '2021 Castana Production in Brazil',
-    style_function = lambda feature: {
-        'fillColor': get_color(feature['properties']['2021']),
-        'color': 'black',
-        'weight': 0.5,
-        'fillOpacity': 0.75
-    },
-    highlight_function=lambda feature: {
-        'fillColor': 'yellow',   # Change color on hover
-        'color': 'black',         # Keep border black on hover
-        'weight': 1.5,            # Increase weight on hover
-        'fillOpacity': 0.7
-    },
-    tooltip=folium.GeoJsonTooltip(
-        fields=['NM_MUN', '2021'],  # Replace with the name of your column
-        aliases=['Municipality:', '2021 Brazil Nut Production'],             # Tooltip alias
-        localize=True                   # Localize numbers
-    )
-).add_to(m)
-
-brazil_castana_2022_layer = folium.GeoJson(
-    bra_gdf_castana,
-    name = '2022 Castana Production in Brazil',
-    style_function = lambda feature: {
-        'fillColor': get_color(feature['properties']['2022']),
-        'color': 'black',
-        'weight': 0.5,
-        'fillOpacity': 0.75
-    },
-    highlight_function=lambda feature: {
-        'fillColor': 'yellow',   # Change color on hover
-        'color': 'black',         # Keep border black on hover
-        'weight': 1.5,            # Increase weight on hover
-        'fillOpacity': 0.7
-    },
-    tooltip=folium.GeoJsonTooltip(
-        fields=['NM_MUN', '2022'],  # Replace with the name of your column
-        aliases=['Municipality:', '2022 Brazil Nut Production'],             # Tooltip alias
-        localize=True                   # Localize numbers
-    )
-).add_to(m)
+    return layer
 
 
+base_data, locations = load_base_data()
+
+m = folium.Map(location=[-3.4653, -62.2159],
+            #    tiles = 'Stamen Terrain',
+            #    attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+               zoom_start=5,
+               prefer_canvas = True)
+
+# castana_2019_layer = get_data_layer(base_data, 'Brazil Nut', '2019')
+# castana_2020_layer = get_data_layer(base_data, 'Brazil Nut', '2020')
+# castana_2021_layer = get_data_layer(base_data, 'Brazil Nut', '2021')
+castana_2022_layer = get_data_layer(base_data, 'Brazil Nut', '2022')
+castana_2023_layer = get_data_layer(base_data, 'Brazil Nut', '2023', show = True)
+
+
+# soy_2019_layer = get_data_layer(base_data, 'Soy', '2019')
+# soy_2020_layer = get_data_layer(base_data, 'Soy', '2020')
+# soy_2021_layer = get_data_layer(base_data, 'Soy', '2021')
+soy_2022_layer = get_data_layer(base_data, 'Soy', '2022')
+soy_2023_layer = get_data_layer(base_data, 'Soy', '2023')
+
+# Create a FeatureGroup to hold the points
+ngos_layer_group = folium.FeatureGroup(name='Brazil Nut Production and Protection Organizations')
+for name, coordinates in locations.items():
+    folium.Marker(
+        location=coordinates,
+        popup=name,
+        icon=folium.Icon(color='blue')  # Use basic color
+    ).add_to(ngos_layer_group)
+
+
+
+# castana_2019_layer.add_to(m)
+# castana_2020_layer.add_to(m)
+# castana_2021_layer.add_to(m)
+castana_2022_layer.add_to(m)
+castana_2023_layer.add_to(m)
+# soy_2019_layer.add_to(m)
+# soy_2020_layer.add_to(m)
+# soy_2021_layer.add_to(m)
+soy_2022_layer.add_to(m)
+soy_2023_layer.add_to(m)
+ngos_layer_group.add_to(m)
 
 folium.LayerControl(collapsed = False).add_to(m)
+
+st.markdown("""
+Municipal Brazil Nut production reporting was not found for Bolivia or Peru, and Peru also lacked municipial Soy production reporting.
+Please see the below tables for 2022 national productions statistics from the UN FAO for comparison purposes.
+""")
+
+nuts = {
+    'Country': ['Brazil', 'Bolivia', 'Peru'],
+    'Brazil Nut Production (metric tons)': [38169, 34020, 7088]
+}
+
+soy = {
+    'Country': ['Brazil', 'Bolivia', 'Peru'],
+    'Brazil Nut Production (metric tons)': [120701031, 3457144, 1596]
+}
+
+nutdf = pd.DataFrame(nuts)
+soydf = pd.DataFrame(soy)
+
+st.title('National Brazil Nut Production 2022')
+st.dataframe(nutdf)
+
+st.title('National Soy Production 2022')
+st.dataframe(soydf)
 
 st_data = st_folium(m, width=725)

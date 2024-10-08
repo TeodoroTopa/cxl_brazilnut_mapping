@@ -1,0 +1,10 @@
+branca
+folium
+geopandas
+numpy
+pandas
+rasterio
+requests
+streamlit
+python-dotenv
+streamlit-folium

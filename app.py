@@ -142,8 +142,8 @@ ngos_layer_group.add_to(m)
 folium.LayerControl(collapsed = False).add_to(m)
 
 st.markdown("""
-Municipal Brazil Nut production reporting was not found for Bolivia or Peru, and Peru also lacked municipial Soy production reporting.
-Please see the below tables for 2022 national productions statistics from the UN FAO for comparison purposes.
+Municipality level Brazil Nut production reporting was not found for Bolivia or Peru, and Peru also lacked municipial level Soy production reporting.
+Please see the below tables for 2022 national productions statistics from the UN FAO for comparison purposes before exploring the below interactive map!
 """)
 
 nuts = {

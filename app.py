@@ -13,7 +13,7 @@ import requests
 import streamlit as st
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
-from streamlit_folium import st_folium
+from streamlit_folium import st_folium, folium, folium_static
 from folium.plugins import MarkerCluster
 
 
@@ -141,11 +141,6 @@ ngos_layer_group.add_to(m)
 
 folium.LayerControl(collapsed = False).add_to(m)
 
-st.markdown("""
-Municipality level Brazil Nut production reporting was not found for Bolivia or Peru, and Peru also lacked municipial level Soy production reporting.
-Please see the below tables for 2022 national productions statistics from the UN FAO for comparison purposes before exploring the below interactive map!
-""")
-
 nuts = {
     'Country': ['Brazil', 'Bolivia', 'Peru'],
     'Brazil Nut Production (metric tons)': [38169, 34020, 7088]
@@ -153,16 +148,22 @@ nuts = {
 
 soy = {
     'Country': ['Brazil', 'Bolivia', 'Peru'],
-    'Brazil Nut Production (metric tons)': [120701031, 3457144, 1596]
+    'Soy Production (metric tons)': [120701031, 3457144, 1596]
 }
 
 nutdf = pd.DataFrame(nuts)
 soydf = pd.DataFrame(soy)
+
+
+st_data = folium_static(m, width=725, height = 500)
+
+st.markdown("""
+Municipality level Brazil Nut production reporting was not found for Bolivia or Peru, and Peru also lacked municipial level Soy production reporting.
+Please see the below tables for 2022 national productions statistics from comparison purposes after exploring the interactive map!
+""")
 
 st.title('National Brazil Nut Production 2022')
 st.dataframe(nutdf)
 
 st.title('National Soy Production 2022')
 st.dataframe(soydf)
-
-st_data = st_folium(m, width=725)

@@ -98,21 +98,19 @@ def get_data_layer(base_data, crop, year, show = False):
 base_data, locations = load_base_data()
 
 m = folium.Map(location=[-3.4653, -62.2159],
-            #    tiles = 'Stamen Terrain',
-            #    attr='Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
                zoom_start=5,
                prefer_canvas = True)
 
-# castana_2019_layer = get_data_layer(base_data, 'Brazil Nut', '2019')
-# castana_2020_layer = get_data_layer(base_data, 'Brazil Nut', '2020')
-# castana_2021_layer = get_data_layer(base_data, 'Brazil Nut', '2021')
+castana_2019_layer = get_data_layer(base_data, 'Brazil Nut', '2019')
+castana_2020_layer = get_data_layer(base_data, 'Brazil Nut', '2020')
+castana_2021_layer = get_data_layer(base_data, 'Brazil Nut', '2021')
 castana_2022_layer = get_data_layer(base_data, 'Brazil Nut', '2022')
 castana_2023_layer = get_data_layer(base_data, 'Brazil Nut', '2023', show = True)
 
 
-# soy_2019_layer = get_data_layer(base_data, 'Soy', '2019')
-# soy_2020_layer = get_data_layer(base_data, 'Soy', '2020')
-# soy_2021_layer = get_data_layer(base_data, 'Soy', '2021')
+soy_2019_layer = get_data_layer(base_data, 'Soy', '2019')
+soy_2020_layer = get_data_layer(base_data, 'Soy', '2020')
+soy_2021_layer = get_data_layer(base_data, 'Soy', '2021')
 soy_2022_layer = get_data_layer(base_data, 'Soy', '2022')
 soy_2023_layer = get_data_layer(base_data, 'Soy', '2023')
 
@@ -127,14 +125,14 @@ for name, coordinates in locations.items():
 
 
 
-# castana_2019_layer.add_to(m)
-# castana_2020_layer.add_to(m)
-# castana_2021_layer.add_to(m)
+castana_2019_layer.add_to(m)
+castana_2020_layer.add_to(m)
+castana_2021_layer.add_to(m)
 castana_2022_layer.add_to(m)
 castana_2023_layer.add_to(m)
-# soy_2019_layer.add_to(m)
-# soy_2020_layer.add_to(m)
-# soy_2021_layer.add_to(m)
+soy_2019_layer.add_to(m)
+soy_2020_layer.add_to(m)
+soy_2021_layer.add_to(m)
 soy_2022_layer.add_to(m)
 soy_2023_layer.add_to(m)
 ngos_layer_group.add_to(m)

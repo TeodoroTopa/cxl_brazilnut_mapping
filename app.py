@@ -137,7 +137,7 @@ soy_2022_layer.add_to(m)
 soy_2023_layer.add_to(m)
 ngos_layer_group.add_to(m)
 
-folium.LayerControl(collapsed = False).add_to(m)
+folium.LayerControl().add_to(m)
 
 nuts = {
     'Country': ['Brazil', 'Bolivia', 'Peru'],
